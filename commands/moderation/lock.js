@@ -1,6 +1,8 @@
+// Imports
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js")
 
 module.exports = {
+    // Slash Command Builder
     data: new SlashCommandBuilder()
         .setName('lock')
         .setDescription('(ADMIN) Locks the current channel')
@@ -20,8 +22,10 @@ module.exports = {
 
     async execute(interaction) {
 
+        // Fetch MongoDB doc
         const doc = interaction.client.mongo.db("avalon").collection("locked");
 
+        // Helper functions
         function lockedQuery(channel) {
             const filter = { channelId: channel.id };
             return doc.findOne(filter);
@@ -32,6 +36,7 @@ module.exports = {
             return doc.deleteOne(filter);
         }
 
+        // Function to toggle locked state
         async function toggle(state, channel) {
             await channel.permissionOverwrites.edit(interaction.guild.roles.everyone, {
                 [PermissionFlagsBits.SendMessages]: state,
@@ -39,6 +44,7 @@ module.exports = {
                 [PermissionFlagsBits.CreatePrivateThreads]: state
             });
         }
+
 
         async function lock(channel, unlock) {
             if (unlock === false || unlock === null || unlock === undefined) {
@@ -56,9 +62,11 @@ module.exports = {
             }
         }
 
+        // Fetch inputs
         const channel = interaction.options.getChannel('channel');
         const unlock = interaction.options.getBoolean('unlock');
 
+        // Lock/Unlock channel
         if(channel === null || channel === undefined) {
             await lock(interaction.channel, unlock, doc);
         } else {
