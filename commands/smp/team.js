@@ -4,6 +4,7 @@ const matcher = new RegExpMatcher({
     ...englishDataset.build(),
     ...englishRecommendedTransformers,
 });
+const {colorTest} = require("j27-lib");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -147,9 +148,10 @@ module.exports = {
                 }
                 const color = interaction.options.getString("color");
                 if (color !== null) {
-                    const colorRegex = /^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
-                    const colorTest = colorRegex.test(color.trim());
-                    if (colorTest) {
+                    let check = colorTest(color);
+                    if (!check) {
+                        await interaction.channel.followUp({content: `${color} is not a valid hex code`, flags: MessageFlags.Ephemeral});
+                    } else {
                         await coll.updateOne({owner: user.id}, {
                             $set: {
                                 color: color,
@@ -158,8 +160,6 @@ module.exports = {
                         });
                         await role.setColors({primaryColor: color});
                         await adminChannel.send(`${interaction.member.displayName} has changed their team color to ${color}`);
-                    } else {
-                        await interaction.channel.followUp({content: `${color} is not a valid hex code`, flags: MessageFlags.Ephemeral})
                     }
                 }
                 const invite = await interaction.options.getString("invite");
