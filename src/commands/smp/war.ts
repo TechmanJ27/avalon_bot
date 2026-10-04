@@ -1,6 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder, ChannelType, PermissionsBitField, MessageFlags } = require('discord.js');
+import {Message, ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder, ChannelType, PermissionsBitField, MessageFlags} from 'discord.js';
 
-module.exports = {
+export default {
     data: new SlashCommandBuilder()
         .setName('war')
         .setDescription("Declare, view, and end wars.")
@@ -43,15 +43,19 @@ module.exports = {
             return subcommand;
         }),
 
-    async execute(interaction) {
+    async execute(interaction: ChatInputCommandInteraction) {
+        if (!interaction.inCachedGuild()) {
+            await interaction.reply({ content: 'This command can only be used in a server.' });
+            return;
+        }
         const subcommand = interaction.options.getSubcommand();
-
         const myDB = interaction.client.mongo.db("avalon");
         const myColl = myDB.collection("wars");
         const coll = myDB.collection("teams");
 
         const REQUIRED_ROLE_ID = '1549243866517995520';
         const adminChannel = await interaction.client.channels.fetch('1549162267470463046');
+        if (!adminChannel || !adminChannel.isTextBased() || !('send' in adminChannel)) return;
 
         switch (subcommand) {
             case 'declare':
@@ -74,16 +78,16 @@ module.exports = {
                     .setDescription('Declaration of War request started.\n\nWhat team is declaring war?');
 
                 const processMessage = await channel.send({content: `||<@${interaction.user.id}>||`, embeds: [baseEmbed]});
-                const filter = msg => msg.author.id === interaction.user.id;
+                const filter = (msg: Message) => msg.author.id === interaction.user.id;
 
-                const askQuestion = async (promptDescription) => {
+                const askQuestion = async (promptDescription: string) => {
                     const updatedEmbed = EmbedBuilder.from(processMessage.embeds[0]).setDescription(promptDescription);
                     await processMessage.edit({embeds: [updatedEmbed]});
 
                     const collected = await channel.awaitMessages({filter, max: 1, time: 60000, errors: ['time']});
                     const userMsg = collected.first();
-                    const content = userMsg.content;
-                    await userMsg.delete().catch(() => {
+                    const content = userMsg!.content;
+                    await userMsg!.delete().catch(() => {
                     });
                     return content;
                 };
@@ -99,6 +103,7 @@ module.exports = {
                             }), 3000);
                         } else {
                             const docs = await coll.findOne({name: attackingTeam.toLowerCase()});
+                            if (!docs) return;
                             if (docs.owner !== interaction.user.id) {
                                 const errorMsg = await channel.send(`You are not the owner of ${attackingTeam}.`);
                                 attackingTeam = '';
@@ -161,7 +166,6 @@ module.exports = {
                                 {name: '\u200b', value: `Run /war approve id:${warId} to approve`},
                             );
 
-                        const adminChannel = await interaction.guild.channels.fetch('1549162267470463046');
                         const approveMessage = await adminChannel.send({embeds: [adminEmbed]});
 
                         const approveFilter = { customId: warId };
@@ -203,6 +207,7 @@ module.exports = {
                     return;
                 }
                 const warChannel = await interaction.client.channels.fetch('1549504858200215652');
+                if (!warChannel || !warChannel.isTextBased() || !('send' in warChannel)) return;
 
                 const message = await adminChannel.messages.fetch(doc.approveMsgId);
 
