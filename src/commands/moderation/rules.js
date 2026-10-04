@@ -1,6 +1,6 @@
 // Imports
 const { WebhookClient, ContainerBuilder, MessageFlags, ModalBuilder, LabelBuilder, TextInputBuilder, TextInputStyle, SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { webhookId, webhookToken } = require('../../config.json');
+const { webhookId, webhookToken } = require('../../../config.json');
 const fs = require('fs');
 const path = require('path');
 

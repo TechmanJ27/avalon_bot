@@ -1,5 +1,5 @@
 const { WebhookClient, ContainerBuilder, MessageFlags, SeparatorSpacingSize } = require('discord.js'); 
-const { webhookId, webhookToken } = require('../config.json');
+const { webhookId, webhookToken } = require('../../config.json');
 
   const webhookClient = new WebhookClient({ id: webhookId, token: webhookToken });
   
