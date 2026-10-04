@@ -7,11 +7,11 @@
     "Rule_5": "Have common sense. If you think you shouldn’t do something, don’t do it.",
     "Rule_6": "Follow Discord ToS.",
     "Rule_7": "Please refrain from discussing real-life politics.",
-    "Rule_8": "Do not advertise other servers or anything of the sort without first getting approval from an admin.",
+    "Rule_8": "Do not advertise other servers or anything of the sort outside of <#1556442475487436923> without first getting approval from an admin.",
     "Rule_9": "Affiliated servers will not be moderated by our staff; however, you can still get banned for anything you say there or anywhere else, including servers, group chats, and DMs."
   },
   "Punishments": {
     "Text": "Punishments will be determined on a case-by-case basis.\nThe severity of a punishment will be dependent on how severe a rule you broke and how many previous infractions you have.\nYour first infraction will almost always be a warning."
   },
-  "Message_Id": "1553164151080091719"
+  "Message_Id": "1556444930438856765"
 }

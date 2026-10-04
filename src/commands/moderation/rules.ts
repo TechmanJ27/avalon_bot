@@ -30,7 +30,7 @@ export default {
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction: ChatInputCommandInteraction) {
-        const rulesPath = path.join(__dirname, '../../data/rules.json');
+        const rulesPath = path.join(import.meta.dirname, '../../data/rules.json');
         const rulesJson = fs.readFileSync(rulesPath, 'utf8');
         const rulesObject = JSON.parse(rulesJson);
 
@@ -51,11 +51,10 @@ export default {
         const ruleInput = new TextInputBuilder()
             .setCustomId('rule-input')
             .setStyle(TextInputStyle.Paragraph)
-            .setPlaceholder('The updated rule text');
+            .setValue(rulesObject.Rules[formattedRuleNum]);
 
         const newRuleLabel = new LabelBuilder()
             .setLabel('What should the new rule text say?')
-            .setDescription(`Current rule: ${rulesObject.Rules[formattedRuleNum]}`)
             .setTextInputComponent(ruleInput);
 
         rulesModal.addLabelComponents(newRuleLabel);
@@ -66,6 +65,7 @@ export default {
 
         try {
             const modalSubmit = await interaction.awaitModalSubmit({ time: 60_000, filter });
+            await modalSubmit.deferReply();
             rulesObject.Rules[formattedRuleNum] = modalSubmit.fields.getTextInputValue('rule-input');
 
             const rulesContainer = new ContainerBuilder()
@@ -144,7 +144,7 @@ export default {
             const updatedJson = JSON.stringify(rulesObject, null, 2);
             fs.writeFileSync(rulesPath, updatedJson);
 
-            await modalSubmit.reply({ content: 'Rule updated successfully.', flags: MessageFlags.Ephemeral });
+            await modalSubmit.editReply({ content: 'Rule updated successfully.'});
         } catch (err) {
             console.error('Modal submission timed out or failed:', err);
         }
