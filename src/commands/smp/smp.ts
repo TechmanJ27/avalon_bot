@@ -36,17 +36,19 @@ export default {
         let embed = new EmbedBuilder().setColor(0x12a5b0);
         switch (subcommand) {
             case "ip":
-                embed.setTitle('Server IP').setDescription(serverInfo.serverIP);
+                embed.setTitle('Server IP').setDescription('play.avalon.hauge.biz:25565');
                 await interaction.editReply({embeds: [embed]});
                 break;
             case "modpack":
-                embed.setTitle('Server Modpack').setDescription('The .zip file is the curseforge modpack, and the .mrpack file is the modrinth one.');
-                const cfPack = new AttachmentBuilder('../.././packs/curseforge_pack.zip', { name: 'curseforge_pack' });
-                const mrPack = new AttachmentBuilder('../.././packs/modrinth_pack.mrpack', { name: 'modrinth_pack' });
-                await interaction.editReply({embeds: [embed], files: [cfPack, mrPack]});
+                embed.setTitle('Server Modpack').setDescription('The .zip file is the curseforge modpack.');
+                //embed.setTitle('Server Modpack').setDescription('The .zip file is the curseforge modpack, and the .mrpack file is the modrinth one.');
+                const cfPack = new AttachmentBuilder('./packs/curseforge_pack.zip', { name: 'curseforge_pack' });
+                //const mrPack = new AttachmentBuilder('./packs/modrinth_pack.mrpack', { name: 'modrinth_pack' });
+                await interaction.editReply({embeds: [embed], files: [cfPack]});
+                //await interaction.editReply({embeds: [embed], files: [cfPack, mrPack]});
                 break;
             case "season":
-                embed.setTitle('Season Info').noTitleField('Current Season: II').addFields({name: 'Title', value: 'Create: Money & Machines'}, {name: 'Description', value: 'Explore a vast and unique world, build farms and shops, and climb your way to the top of the net worth leaderboards!'});
+                embed.setTitle('Season Info').addFields({name: 'Current Season: II', value: '\u200B'},{name: 'Title', value: 'Create: Money & Machines'}, {name: 'Description', value: 'Explore a vast and unique world, build farms and shops, and climb your way to the top of the net worth leaderboards!'});
                 await interaction.editReply({embeds: [embed]});
                 break;
             case "rules":
