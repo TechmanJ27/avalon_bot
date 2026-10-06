@@ -5,6 +5,18 @@ import { Client, Collection, GatewayIntentBits, Partials } from 'discord.js';
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import 'dotenv/config';
 
+import {EmbedBuilder} from "discord.js";
+
+EmbedBuilder.prototype.noTitleField = function(value: string, inline: boolean = false) {
+	this.addFields({
+		name: '\u200B',
+		value: value,
+		inline: inline
+	});
+
+	return this;
+};
+
 const client = new Client({
 	intents: [
 		GatewayIntentBits.Guilds,

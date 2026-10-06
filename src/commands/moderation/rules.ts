@@ -51,7 +51,7 @@ export default {
         const ruleInput = new TextInputBuilder()
             .setCustomId('rule-input')
             .setStyle(TextInputStyle.Paragraph)
-            .setValue(rulesObject.Rules[formattedRuleNum]);
+            .setPlaceholder('Updated rule here');
 
         const newRuleLabel = new LabelBuilder()
             .setLabel('What should the new rule text say?')

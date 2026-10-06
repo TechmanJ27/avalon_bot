@@ -12,4 +12,7 @@ declare module 'discord.js' {
             [key: string]: any;
         };
     }
+    export interface EmbedBuilder {
+        noTitleField(value: string, inline?: boolean): this;
+    }
 }

@@ -21,6 +21,7 @@
     "discord.js": "^14.27.0",
     "distube": "^5.2.3",
     "dotenv": "^17.4.2",
+    "groq-sdk": "^1.6.0",
     "j27-lib": "^1.0.0",
     "javascript-obfuscator": "^5.7.0",
     "mongodb": "^7.6.0",
