@@ -37,8 +37,8 @@ export default {
             case "modpack":
                 embed.setTitle('Server Modpack').setDescription('The .zip file is the curseforge modpack.');
                 //embed.setTitle('Server Modpack').setDescription('The .zip file is the curseforge modpack, and the .mrpack file is the modrinth one.');
-                const cfPack = new AttachmentBuilder('../../../packs/curseforge_pack.zip', { name: 'curseforge_pack' });
-                //const mrPack = new AttachmentBuilder('../../../packs/modrinth_pack.mrpack', { name: 'modrinth_pack' });
+                const cfPack = new AttachmentBuilder('~/techmanj27/avalon_bot/packs/curseforge_pack.zip', { name: 'curseforge_pack' });
+                //const mrPack = new AttachmentBuilder('~/techmanj27/avalon_bot/packs/modrinth_pack.mrpack', { name: 'modrinth_pack' });
                 await interaction.editReply({embeds: [embed], files: [cfPack]});
                 //await interaction.editReply({embeds: [embed], files: [cfPack, mrPack]});
                 break;
