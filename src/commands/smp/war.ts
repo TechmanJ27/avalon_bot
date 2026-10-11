@@ -148,7 +148,8 @@ export default {
                             reason: reason,
                             plan: plan,
                             status: 'Awaiting approval',
-                            requestedAt: new Date()
+                            requestedAt: new Date(),
+                            dev: true,
                         });
 
                         const finalEmbed = EmbedBuilder.from(processMessage.embeds[0])
