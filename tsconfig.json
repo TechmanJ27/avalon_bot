@@ -19,6 +19,7 @@
     "strictNullChecks": true,
     "strictPropertyInitialization": true,
     "stripInternal": true,
+    "resolveJsonModule": true,
 
     "typeRoots": [
       "node_modules/@types",

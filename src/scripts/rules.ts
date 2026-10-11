@@ -1,5 +1,5 @@
 import { WebhookClient, ContainerBuilder, MessageFlags, SeparatorSpacingSize } from 'discord.js';
-import config from '../.././config.json' with { type: 'json' };
+import config from '../../config.json' with { type: 'json' };
 
 const { webhookId, webhookToken } = config;
 
