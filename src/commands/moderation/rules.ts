@@ -11,7 +11,7 @@ import {
     ChatInputCommandInteraction,
     TextChannel
 } from 'discord.js';
-import config from '../../../config.json' with { type: 'json' };
+import config from '../../.././config.json' with { type: 'json' };
 import fs from 'fs';
 import path from 'path';
 
