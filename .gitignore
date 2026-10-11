@@ -1,4 +1,4 @@
 /node_modules
-dist/avalon.env
+dist/.env
 config.json
 dist/
