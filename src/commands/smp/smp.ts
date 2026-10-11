@@ -1,6 +1,4 @@
 import {AttachmentBuilder, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder} from "discord.js";
-import fs from 'fs';
-import path from 'path';
 
 export default {
     data: new SlashCommandBuilder()
@@ -29,9 +27,6 @@ export default {
 
     async execute(interaction: ChatInputCommandInteraction) {
         await interaction.deferReply();
-        const serverPath = path.join(import.meta.dirname, '../../data/rules.json');
-        const serverJson = fs.readFileSync(serverPath, 'utf8');
-        const serverInfo = JSON.parse(serverJson);
         const subcommand = interaction.options.getSubcommand();
         let embed = new EmbedBuilder().setColor(0x12a5b0);
         switch (subcommand) {
