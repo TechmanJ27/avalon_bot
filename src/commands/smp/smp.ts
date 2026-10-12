@@ -1,4 +1,6 @@
 import {AttachmentBuilder, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder} from "discord.js";
+import path from "path";
+import { fileURLToPath } from 'url';
 
 export default {
     data: new SlashCommandBuilder()
@@ -35,9 +37,12 @@ export default {
                 await interaction.editReply({embeds: [embed]});
                 break;
             case "modpack":
+                const __dirname = path.dirname(fileURLToPath(import.meta.url));
+                const cfPath = path.resolve(__dirname, '../../../packs/curseforge_pack.zip');
+
                 embed.setTitle('Server Modpack').setDescription('The .zip file is the curseforge modpack.');
                 //embed.setTitle('Server Modpack').setDescription('The .zip file is the curseforge modpack, and the .mrpack file is the modrinth one.');
-                const cfPack = new AttachmentBuilder('~/techmanj27/avalon_bot/packs/curseforge_pack.zip', { name: 'curseforge_pack' });
+                const cfPack = new AttachmentBuilder(cfPath, { name: 'curseforge_pack' });
                 //const mrPack = new AttachmentBuilder('~/techmanj27/avalon_bot/packs/modrinth_pack.mrpack', { name: 'modrinth_pack' });
                 await interaction.editReply({embeds: [embed], files: [cfPack]});
                 //await interaction.editReply({embeds: [embed], files: [cfPack, mrPack]});
