@@ -43,8 +43,8 @@ export default {
                         .setDescription('Get a war based on a query')
                         .addStringOption((option) =>
                             option
-                                .setName('default')
-                                .setDescription('Default for production')
+                                .setName('query')
+                                .setDescription('The search query')
                         )
                 )
         )
@@ -125,7 +125,7 @@ export default {
                         break;
 
                     case 'get':
-
+                        
                         break;
 
                 }
