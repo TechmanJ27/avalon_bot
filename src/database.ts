@@ -10,3 +10,17 @@ export function newWar() {
     ) STRICT
   `);
 }
+
+export function getWar() {
+  
+}
+
+export function newTeam() {
+  database.exec(`
+    CREATE TABLE data(
+      key INTEGER PRIMARY KEY,
+      value TEXT
+    ) STRICT
+  `);
+}
+
