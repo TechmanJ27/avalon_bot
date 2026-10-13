@@ -74,6 +74,17 @@ if (fs.existsSync(eventsPath)) {
 	}
 }
 
+import { registerChannelHandlers } from './events/channelHandler.js';
+registerChannelHandlers(client);
+import { registerGuildHandlers } from './events/guildHandler.js';
+registerGuildHandlers(client);
+import { registerMessageHandlers } from './events/messageHandler.js';
+registerMessageHandlers(client);
+import { registerModerationHandlers } from './events/moderationHandler.js';
+registerModerationHandlers(client);
+import { registerUserHandlers } from './events/userHandler.js';
+registerUserHandlers(client);
+
 if (!process.env.MONGODB_URI) {
 	throw new Error('MONGODB_URI is missing in environment variables.');
 }

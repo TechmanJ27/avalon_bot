@@ -1,11 +1,16 @@
-client.on('channelCreate', (channel) => {
-    logChannelCreate(channel);
-});
+import type { Client } from 'discord.js';
+import { logChannelCreate, logChannelDelete, logChannelUpdate } from '../logHelpers.js';
 
-client.on('channelDelete', (channel) => {
-    logChannelDelete(channel);
-});
+export function registerChannelHandlers(client: Client) {
+    client.on('channelCreate', (channel) => {
+        logChannelCreate(channel);
+    });
 
-client.on('channelUpdate', (oldChannel, newChannel) => {
-    logChannelUpdate(oldChannel, newChannel);
-});
+    client.on('channelDelete', (channel) => {
+        logChannelDelete(channel);
+    });
+
+    client.on('channelUpdate', (oldChannel, newChannel) => {
+        logChannelUpdate(oldChannel, newChannel);
+    });
+}
