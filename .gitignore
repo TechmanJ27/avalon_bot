@@ -4,4 +4,4 @@
 dist/.env
 config.json
 dist/
-/database
+database.db

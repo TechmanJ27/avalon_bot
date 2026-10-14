@@ -9,7 +9,8 @@ import {
     SlashCommandBuilder,
     PermissionFlagsBits,
     ChatInputCommandInteraction,
-    TextChannel
+    TextChannel,
+    InteractionContextType
 } from 'discord.js';
 import config from '../../../config.json' with { type: 'json' };
 import fs from 'fs';
@@ -21,6 +22,7 @@ export default {
     data: new SlashCommandBuilder()
         .setName('rule-update')
         .setDescription('(ADMIN) Update the server rules.')
+        .setContexts(InteractionContextType.Guild)
         .addNumberOption((option) =>
             option
                 .setName('rule')

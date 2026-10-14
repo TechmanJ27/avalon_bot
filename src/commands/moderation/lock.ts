@@ -2,13 +2,15 @@ import {
     SlashCommandBuilder,
     PermissionFlagsBits,
     ChatInputCommandInteraction,
-    TextChannel
+    TextChannel,
+    InteractionContextType
 } from "discord.js";
 
 export default {
     data: new SlashCommandBuilder()
         .setName('lock')
         .setDescription('(ADMIN) Locks the current channel')
+        .setContexts(InteractionContextType.Guild)
         .addChannelOption(option =>
             option
                 .setName('channel')

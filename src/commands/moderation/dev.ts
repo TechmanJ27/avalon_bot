@@ -1,10 +1,11 @@
-import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
+import {ChatInputCommandInteraction, InteractionContextType, SlashCommandBuilder} from "discord.js";
 
 
 export default {
     data: new SlashCommandBuilder()
         .setName("dev")
         .setDescription("Dev overrides")
+        .setContexts(InteractionContextType.Guild)
         .addSubcommandGroup((group) =>
             group
                 .setName('war')

@@ -1,16 +1,13 @@
-import type { Client } from 'discord.js';
-import { logBan, logUnban } from '../logHelpers.js';
-import { addCase } from '../database.js';
+import { Events, type Client } from 'discord.js';
+import { log } from '../logHelpers.js';
 
 export function registerModerationHandlers(client: Client) {
-    client.on('guildBanAdd', (ban) => {
-        logBan(ban);
-        addCase('ban', ban)
+    client.on(Events.GuildBanAdd, (ban) => {
+        log({type: 'ban', ban: ban});
     });
-
-    client.on('guildBanRemove', (ban) => {
-        logUnban(ban);
-
+    
+    client.on(Events.GuildBanRemove, (ban) => {
+        log({type: 'unban', ban: ban});
     });
 }
 

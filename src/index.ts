@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { Client, Collection, GatewayIntentBits, Partials } from 'discord.js';
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import 'dotenv/config';
+import {teamsTable, casesTable, warsTable, configTable} from "./database.js";
 
 import {EmbedBuilder} from "discord.js";
 
@@ -84,6 +85,11 @@ import { registerModerationHandlers } from './events/moderationHandler.js';
 registerModerationHandlers(client);
 import { registerUserHandlers } from './events/userHandler.js';
 registerUserHandlers(client);
+
+teamsTable();
+warsTable();
+casesTable();
+configTable();
 
 if (!process.env.MONGODB_URI) {
 	throw new Error('MONGODB_URI is missing in environment variables.');
