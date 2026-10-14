@@ -93,7 +93,7 @@ export function configTable() {
   database.exec(`
     CREATE TABLE IF NOT EXISTS logChannel (
       id INTEGER PRIMARY KEY,
-      channel STRING NOT NULL
+      channel TEXT NOT NULL
     ) STRICT
   `);
 }
