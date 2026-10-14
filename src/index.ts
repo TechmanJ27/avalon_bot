@@ -19,11 +19,9 @@ EmbedBuilder.prototype.noTitleField = function(value: string, inline: boolean = 
 };
 
 const client = new Client({
-	intents: [
-		GatewayIntentBits.Guilds,
-		GatewayIntentBits.GuildMessages,
-		GatewayIntentBits.MessageContent,
-	],
+	intents: Object.values(GatewayIntentBits).filter(
+		(v): v is GatewayIntentBits => typeof v === 'number'
+	),
 	partials: [Partials.Channel, Partials.Message],
 });
 
@@ -118,4 +116,4 @@ async function main() {
 	}
 }
 
-main();
+main().catch(console.error);
