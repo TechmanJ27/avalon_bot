@@ -278,7 +278,7 @@ function buildEmbed(event: LogEvent): { guild: Guild; embed: EmbedBuilder, file?
 
       embed.setColor(Colors.Red).setTitle("Messages Purged")
           .setDescription(
-              `@<${event.mod}> purged ${purgedCount} messages in ${purgedChannel}`,
+              `<@${event.mod}> purged ${purgedCount} messages in ${purgedChannel}`,
           );
       return {guild: purgedChannel.guild, embed, file};
     }
