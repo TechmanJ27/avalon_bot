@@ -1,6 +1,7 @@
 import { AttachmentBuilder, InteractionContextType, SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { addCase } from "../../database.js";
 import ms from 'ms';
+import {log} from "../../logHelpers.js";
 
 export default {
     data: new SlashCommandBuilder()
@@ -216,9 +217,11 @@ export default {
                 const attachment = new AttachmentBuilder(purgedBuffer, { name: 'deleted-messages.txt' });
                 
                 await interaction.editReply({ 
-                    content: 'Here is your generated text file!', 
+                    content: 'Deleted messages:',
                     files: [attachment] 
                 });
+
+                log({type: "purge", amount: amount, channel: channel, mod: interaction.client.user.id, file: attachment}).catch(console.error);
 
                 break;
 

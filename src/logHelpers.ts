@@ -1,8 +1,9 @@
 import {
+  Attachment, AttachmentBuilder,
   Colors,
   EmbedBuilder,
   type Guild,
-  type GuildBan,
+  type GuildBan, GuildBasedChannel,
   type GuildMember,
   type Invite,
   type Message,
@@ -29,7 +30,10 @@ export type LogEvent =
     | { type: "inviteDelete"; invite: Invite }
     | { type: "roleCreate"; role: Role }
     | { type: "roleDelete"; role: Role }
-    | { type: "roleUpdate"; oldRole: Role; newRole: Role };
+    | { type: "roleUpdate"; oldRole: Role; newRole: Role }
+    | { type: "purge"; file: LogFile; channel: GuildBasedChannel; amount: number; mod: string };
+
+export type LogFile = Attachment | AttachmentBuilder;
 
 const trunc = (s: string | null | undefined, max = 1000): string => {
   if (!s) return "*(empty)*";
@@ -43,7 +47,7 @@ function resolveInviteGuild(invite: Invite): Guild | null {
   return invite.client.guilds.cache.get(invite.guild.id) ?? null;
 }
 
-function buildEmbed(event: LogEvent): { guild: Guild; embed: EmbedBuilder } | null {
+function buildEmbed(event: LogEvent): { guild: Guild; embed: EmbedBuilder, file?: LogFile } | null {
   const embed = new EmbedBuilder().setTimestamp();
 
   switch (event.type) {
@@ -266,13 +270,25 @@ function buildEmbed(event: LogEvent): { guild: Guild; embed: EmbedBuilder } | nu
             .setDescription(`${newRole}\n${changes.join("\n")}`),
       };
     }
+
+    case "purge": {
+      const purgedChannel = event.channel;
+      const file = event.file;
+      const purgedCount = event.amount;
+
+      embed.setColor(Colors.Red).setTitle("Messages Purged")
+          .setDescription(
+              `@<${event.mod}> purged ${purgedCount} messages in ${purgedChannel}`,
+          );
+      return {guild: purgedChannel.guild, embed, file};
+    }
   }
 }
 
 export async function log(event: LogEvent) {
   const built = buildEmbed(event);
   if (!built) return;
-  const { guild, embed } = built;
+  const { guild, embed, file } = built;
 
   const channelId = getLogChannel(guild.id);
   if (!channelId) return;
@@ -280,5 +296,9 @@ export async function log(event: LogEvent) {
   const channel = await guild.channels.fetch(channelId);
   if (!channel?.isTextBased()) return;
 
-  await channel.send({ embeds: [embed] });
+  if (file === undefined) {
+    await channel.send({ embeds: [embed] });
+  } else {
+    await channel.send({ embeds: [embed], files: [file] });
+  }
 }
