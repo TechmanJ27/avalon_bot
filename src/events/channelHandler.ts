@@ -9,6 +9,7 @@ export function registerChannelHandlers(client: Client) {
     });
     client.on(Events.ChannelUpdate, (oldChannel, newChannel) => {
     if (oldChannel.isDMBased() || newChannel.isDMBased()) return;
+    if (newChannel.id === '1551385245046276096') return;
     log({ type: "channelUpdate", oldChannel, newChannel });
     });
 }
