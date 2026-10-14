@@ -22,6 +22,7 @@ export type LogEvent =
     | { type: "memberAdd"; member: GuildMember }
     | { type: "memberRemove"; member: GuildMember | PartialGuildMember }
     | { type: "memberUpdate"; oldMember: GuildMember | PartialGuildMember; newMember: GuildMember }
+    | { type: "messageDelete"; message: Message | PartialMessage }
     | { type: "messageUpdate"; oldMessage: Message | PartialMessage; newMessage: Message | PartialMessage }
     | { type: "guildUpdate"; oldGuild: Guild; newGuild: Guild }
     | { type: "inviteCreate"; invite: Invite }
@@ -155,6 +156,20 @@ function buildEmbed(event: LogEvent): { guild: Guild; embed: EmbedBuilder } | nu
               { name: "After", value: trunc(newMessage.content) },
           );
       return { guild: newMessage.guild, embed };
+    }
+
+    case "messageDelete": {
+      const {message} = event;
+      if (!message.guild) return null;
+
+      embed.setColor(Colors.Red).setTitle("Message Deleted")
+          .setDescription(
+              `${message.author ?? "Unknown author"} in ${message.channel}`,
+          )
+          .addFields(
+              {name: "Content", value: message.content === null ? "*(not cached)*" : trunc(message.content)},
+          );
+      return {guild: message.guild, embed};
     }
 
     case "guildUpdate": {

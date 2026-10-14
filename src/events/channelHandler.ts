@@ -5,11 +5,11 @@ export function registerChannelHandlers(client: Client) {
     client.on(Events.ChannelCreate, channel => log({ type: "channelCreate", channel }));
     client.on(Events.ChannelDelete, channel => {
         if (channel.isDMBased()) return;
-        log({ type: "channelDelete", channel });
+        log({ type: "channelDelete", channel }).catch(console.error);
     });
     client.on(Events.ChannelUpdate, (oldChannel, newChannel) => {
     if (oldChannel.isDMBased() || newChannel.isDMBased()) return;
     if (newChannel.id === '1551385245046276096') return;
-    log({ type: "channelUpdate", oldChannel, newChannel });
+    log({ type: "channelUpdate", oldChannel, newChannel }).catch(console.error);
     });
 }
