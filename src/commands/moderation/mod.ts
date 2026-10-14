@@ -19,7 +19,6 @@ export default {
                 .addStringOption(option =>
                     option.setName("reason")
                         .setDescription("The reason for the ban")
-                        .setRequired(false)
                 )
         )
         .addSubcommand(subcommand =>
@@ -31,15 +30,14 @@ export default {
                         .setDescription("The user to tempban")
                         .setRequired(true)
                 )
-                .addStringOption(option =>
-                    option.setName("reason")
-                        .setDescription("The reason for the tempban")
-                        .setRequired(false)
-                )
                 .addIntegerOption(option =>
                     option.setName("duration")
                         .setDescription("The duration of the tempban")
                         .setRequired(true)
+                )
+                .addStringOption(option =>
+                    option.setName("reason")
+                        .setDescription("The reason for the tempban")
                 )
         )
         .addSubcommand(subcommand =>
@@ -54,7 +52,6 @@ export default {
                 .addStringOption(option =>
                     option.setName("reason")
                         .setDescription("The reason for the warning")
-                        .setRequired(false)
                 )
         )
         .addSubcommand(subcommand =>
@@ -79,7 +76,6 @@ export default {
                 .addStringOption(option =>
                     option.setName("reason")
                         .setDescription("The reason for the kick")
-                        .setRequired(false)
                 )
         )
         .addSubcommand(subcommand =>
