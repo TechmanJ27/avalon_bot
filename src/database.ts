@@ -110,3 +110,22 @@ export function getLogChannel(guildId: string): string | null {
   const row = database.prepare('SELECT channel FROM logChannel WHERE id = ?').get(guildId);
   return row ? String(row.channel) : null;
 }
+
+export function invitesTable() {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS invites (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      inviter TEXT NOT NULL
+      uses INTEGER DEFAULT 0,
+      created_at DATETIME,
+      expires_at DATETIME,
+      channel TEXT NOT NULL
+    ) STRICT
+  `);
+}
+
+export function mostRecentInvite(): {} {
+  const invites = database
+      .prepare('SELECT * FROM invites')
+      .all();
+  date.toISOString();
