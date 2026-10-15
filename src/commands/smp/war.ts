@@ -148,8 +148,7 @@ export default {
                             reason: reason,
                             plan: plan,
                             status: 'Awaiting approval',
-                            requestedAt: new Date(),
-                            dev: true,
+                            requestedAt: new Date()
                         });
 
                         const finalEmbed = EmbedBuilder.from(processMessage.embeds[0])
@@ -251,7 +250,8 @@ export default {
                 const warAnnounceEmbed = new EmbedBuilder()
                     .setColor(0x12a5b0)
                     .setTitle('War declared!')
-                    .setDescription(`${doc.attackingTeam} has declared war on ${doc.defendingTeam}!`);
+                    .setDescription(`${doc.attackingTeam} has declared war on ${doc.defendingTeam}!`)
+                    .setFooter(doc.customId);
 
                 await warChannel.send( { embeds: [warAnnounceEmbed] } );
                 return;

@@ -1,28 +1,42 @@
 import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
+import {ChatInputCommandInteraction, Invite} from "discord.js";
 
 export const database = new DatabaseSync(fileURLToPath(new URL('../../database.db', import.meta.url)));
 
 export function warsTable() {
   database.exec(`
     CREATE TABLE IF NOT EXISTS wars (
-    id INTEGER PRIMARY KEY,
-    value TEXT
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user TEXT NOT NULL,
+      attacking TEXT NOT NULL,
+      defendingTeam TEXT NOT NULL,
+      reason TEXT NOT NULL,
+      plan TEXT NOT NULL,
+      status TEXT NOT NULL,
+      requestedAt TEXT NOT NULL
     ) STRICT
   `);
-}
-
-export function getWarById(id: number) {
-  return database
-      .prepare('SELECT * FROM wars WHERE id = ?')
-      .get(id);
 }
 
 export function teamsTable() {
   database.exec(`
     CREATE TABLE IF NOT EXISTS teams (
-      id INTEGER PRIMARY KEY,
-      value TEXT
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      nameProper TEXT NOT NULL,
+      owner TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    ) STRICT
+  `);
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS members (
+      user_id TEXT NOT NULL,
+      team_id INTEGER NOT NULL,
+      position TEXT NOT NULL,
+      PRIMARY KEY (team_id, user_id),
+      FOREIGN KEY(team_id) REFERENCES teams(id)
     ) STRICT
   `);
 }
@@ -31,6 +45,16 @@ export function getTeamById(id: number) {
   return database
       .prepare('SELECT * FROM teams WHERE id = ?')
       .get(id);
+}
+
+export function getTeamMembers(id: number) {
+  return database
+    .prepare(`SELECT recipes.recipe_name, ingredients.ingredient_name, ingredients.amount
+        FROM teams
+        JOIN members ON members.team_id = teams.team_id
+        WHERE team_id = ${id}`)
+    .get(id);
+
 }
 
 export function casesTable() {
@@ -125,19 +149,19 @@ export function invitesTable() {
   `);
 }
 
-export function mostRecentInvite(): object {
+export async function mostRecentInvite(interaction: ChatInputCommandInteraction) {
   const invites = database
       .prepare('SELECT * FROM invites')
       .all();
   // Invites will be an array of objects
-  foreach (obj in invites) {
-    guild.invites.fetch(obj.code)
-      .then((i) => if (obj.uses !== i.uses) )
-      .catch(console.error);
+  const guild = interaction.guild;
+  for (const obj of invites) {
+    const invite = await guild!.invites.fetch(String(obj.code));
+      if (obj.uses !== invite.uses) return obj;
   }
 }
 
-export function newInvite(invite) {
-  invite.createdAt.toISOString();
-  invite.expiresAt.toISOString();
+export function newInvite(invite: Invite) {
+  invite.createdAt!.toISOString();
+  invite.expiresAt!.toISOString();
 }
