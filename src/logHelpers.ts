@@ -95,12 +95,16 @@ function buildEmbed(event: LogEvent): { guild: Guild; embed: EmbedBuilder, file?
 
     case "memberAdd": {
       const { member } = event;
+      const { invite } = mostRecentInvite();
       return {
         guild: member.guild,
         embed: embed.setColor(Colors.Green).setTitle("Member joined")
             .setDescription(`${member} (${member.user.tag}, ${member.id})`)
             .setThumbnail(member.user.displayAvatarURL())
-            .addFields({ name: "Account created", value: ts(member.user.createdTimestamp) }),
+            .addFields(
+              { name: "Invite Info", value: },
+              { name: "Account created", value: ts(member.user.createdTimestamp) }
+            ),
       };
     }
 
