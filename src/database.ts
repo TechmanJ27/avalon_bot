@@ -115,7 +115,8 @@ export function invitesTable() {
   database.exec(`
     CREATE TABLE IF NOT EXISTS invites (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      inviter TEXT NOT NULL
+      code TEXT NOT NULL,
+      inviter TEXT NOT NULL,
       uses INTEGER DEFAULT 0,
       created_at DATETIME,
       expires_at DATETIME,
@@ -124,8 +125,19 @@ export function invitesTable() {
   `);
 }
 
-export function mostRecentInvite(): {} {
+export function mostRecentInvite(): object {
   const invites = database
       .prepare('SELECT * FROM invites')
       .all();
-  date.toISOString();
+  // Invites will be an array of objects
+  foreach (obj in invites) {
+    guild.invites.fetch(obj.code)
+      .then((i) => if (obj.uses !== i.uses) )
+      .catch(console.error);
+  }
+}
+
+export function newInvite(invite) {
+  invite.createdAt.toISOString();
+  invite.expiresAt.toISOString();
+}
