@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
-import {ChatInputCommandInteraction, Invite} from "discord.js";
+import { Guild, Invite} from "discord.js";
 
 export const database = new DatabaseSync(fileURLToPath(new URL('../../database.db', import.meta.url)));
 
@@ -149,14 +149,14 @@ export function invitesTable() {
   `);
 }
 
-export async function mostRecentInvite(interaction: ChatInputCommandInteraction) {
+export async function mostRecentInvite(guild: Guild) {
   const invites = database
       .prepare('SELECT * FROM invites')
       .all();
+
   // Invites will be an array of objects
-  const guild = interaction.guild;
   for (const obj of invites) {
-    const invite = await guild!.invites.fetch(String(obj.code));
+    const invite = await guild.invites.fetch(String(obj.code));
       if (obj.uses !== invite.uses) return obj;
   }
 }

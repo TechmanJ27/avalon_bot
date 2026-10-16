@@ -12,7 +12,7 @@ import {
   type PartialMessage,
   type Role,
 } from "discord.js";
-import { getLogChannel } from "./database.js";
+import {getLogChannel, mostRecentInvite} from "./database.js";
 
 export type LogEvent =
     | { type: "channelCreate"; channel: NonThreadGuildBasedChannel }
@@ -95,14 +95,15 @@ function buildEmbed(event: LogEvent): { guild: Guild; embed: EmbedBuilder, file?
 
     case "memberAdd": {
       const { member } = event;
-      const { invite } = mostRecentInvite();
+      let invite;
+      mostRecentInvite(member.guild).then((i) => {invite = i});
       return {
         guild: member.guild,
         embed: embed.setColor(Colors.Green).setTitle("Member joined")
             .setDescription(`${member} (${member.user.tag}, ${member.id})`)
             .setThumbnail(member.user.displayAvatarURL())
             .addFields(
-              { name: "Invite Info", value: },
+              { name: "Invite Info", value: (invite ?? 'Error fetching Invite').toString()},
               { name: "Account created", value: ts(member.user.createdTimestamp) }
             ),
       };
