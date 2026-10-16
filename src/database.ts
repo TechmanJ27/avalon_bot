@@ -142,8 +142,8 @@ export function invitesTable() {
       code TEXT NOT NULL,
       inviter TEXT NOT NULL,
       uses INTEGER DEFAULT 0,
-      created_at DATETIME,
-      expires_at DATETIME,
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
       channel TEXT NOT NULL
     ) STRICT
   `);
