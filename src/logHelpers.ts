@@ -12,7 +12,8 @@ import {
   type PartialMessage,
   type Role,
 } from "discord.js";
-import {getLogChannel, mostRecentInvite} from "./database.js";
+import { getLogChannel } from "./database.js";
+import { mostRecentInvite } from "./invites.js";
 
 export type LogEvent =
     | { type: "channelCreate"; channel: NonThreadGuildBasedChannel }
@@ -35,6 +36,8 @@ export type LogEvent =
 
 export type LogFile = Attachment | AttachmentBuilder;
 
+type BuiltEmbed = { guild: Guild; embed: EmbedBuilder; file?: LogFile };
+
 const trunc = (s: string | null | undefined, max = 1000): string => {
   if (!s) return "*(empty)*";
   return s.length > max ? `${s.slice(0, max - 1)}…` : s;
@@ -42,12 +45,29 @@ const trunc = (s: string | null | undefined, max = 1000): string => {
 
 const ts = (ms: number) => `<t:${Math.floor(ms / 1000)}:f>`;
 
+const categoryMention = (id: string | null) => (id ? `<#${id}>` : "none");
+
 function resolveInviteGuild(invite: Invite): Guild | null {
   if (!invite.guild) return null;
   return invite.client.guilds.cache.get(invite.guild.id) ?? null;
 }
 
-function buildEmbed(event: LogEvent): { guild: Guild; embed: EmbedBuilder, file?: LogFile } | null {
+async function describeJoinInvite(member: GuildMember): Promise<string> {
+  if (member.user.bot) return "Bot (added via OAuth)";
+
+  try {
+    const invite = await mostRecentInvite(member.guild);
+    if (!invite) return "Unknown (vanity URL or could not be determined)";
+
+    const inviter = invite.inviterId ? ` by <@${invite.inviterId}>` : "";
+    return `\`${invite.code}\`${inviter} (${invite.uses} uses)`;
+  } catch (err) {
+    console.error("Invite lookup failed:", err);
+    return "Lookup failed (is the Manage Server permission granted?)";
+  }
+}
+
+async function buildEmbed(event: LogEvent): Promise<BuiltEmbed | null> {
   const embed = new EmbedBuilder().setTimestamp();
 
   switch (event.type) {
@@ -72,7 +92,7 @@ function buildEmbed(event: LogEvent): { guild: Guild; embed: EmbedBuilder, file?
         changes.push(`Name: \`${oldChannel.name}\` → \`${newChannel.name}\``);
       }
       if (oldChannel.parentId !== newChannel.parentId) {
-        changes.push(`Category: <#${oldChannel.parentId ?? "none"}> → <#${newChannel.parentId ?? "none"}>`);
+        changes.push(`Category: ${categoryMention(oldChannel.parentId)} → ${categoryMention(newChannel.parentId)}`);
       }
       return {
         guild: newChannel.guild,
@@ -89,22 +109,21 @@ function buildEmbed(event: LogEvent): { guild: Guild; embed: EmbedBuilder, file?
         embed: embed.setColor(banned ? Colors.Red : Colors.Green)
             .setTitle(banned ? "User banned" : "User unbanned")
             .setDescription(`${event.ban.user.tag} (${event.ban.user.id})`)
-            .addFields({ name: "Reason", value: event.ban.reason ?? "No reason provided" }),
+            .addFields({ name: "Reason", value: trunc(event.ban.reason ?? "No reason provided") }),
       };
     }
 
     case "memberAdd": {
       const { member } = event;
-      let invite;
-      mostRecentInvite(member.guild).then((i) => {invite = i});
+      const inviteInfo = await describeJoinInvite(member);
       return {
         guild: member.guild,
         embed: embed.setColor(Colors.Green).setTitle("Member joined")
             .setDescription(`${member} (${member.user.tag}, ${member.id})`)
             .setThumbnail(member.user.displayAvatarURL())
             .addFields(
-              { name: "Invite Info", value: (invite ?? 'Error fetching Invite').toString()},
-              { name: "Account created", value: ts(member.user.createdTimestamp) }
+                { name: "Invite", value: inviteInfo },
+                { name: "Account created", value: ts(member.user.createdTimestamp) },
             ),
       };
     }
@@ -152,7 +171,7 @@ function buildEmbed(event: LogEvent): { guild: Guild; embed: EmbedBuilder, file?
 
     case "messageUpdate": {
       const { oldMessage, newMessage } = event;
-      if (!newMessage.guild) return null; // DMs
+      if (!newMessage.guild) return null;
       if (newMessage.author?.bot) return null;
       if (oldMessage.content !== null && oldMessage.content === newMessage.content) return null;
 
@@ -168,7 +187,7 @@ function buildEmbed(event: LogEvent): { guild: Guild; embed: EmbedBuilder, file?
     }
 
     case "messageDelete": {
-      const {message} = event;
+      const { message } = event;
       if (!message.guild) return null;
 
       embed.setColor(Colors.Red).setTitle("Message Deleted")
@@ -176,9 +195,9 @@ function buildEmbed(event: LogEvent): { guild: Guild; embed: EmbedBuilder, file?
               `${message.author ?? "Unknown author"} in ${message.channel}`,
           )
           .addFields(
-              {name: "Content", value: message.content === null ? "*(not cached)*" : trunc(message.content)},
+              { name: "Content", value: message.content === null ? "*(not cached)*" : trunc(message.content) },
           );
-      return {guild: message.guild, embed};
+      return { guild: message.guild, embed };
     }
 
     case "guildUpdate": {
@@ -196,10 +215,10 @@ function buildEmbed(event: LogEvent): { guild: Guild; embed: EmbedBuilder, file?
         changes.push(`Verification level: ${oldGuild.verificationLevel} → ${newGuild.verificationLevel}`);
       }
       if (oldGuild.afkChannelId !== newGuild.afkChannelId) {
-        changes.push(`AFK channel: ${oldGuild.afkChannelId ? `<#${oldGuild.afkChannelId}>` : "none"} → ${newGuild.afkChannelId ? `<#${newGuild.afkChannelId}>` : "none"}`);
+        changes.push(`AFK channel: ${categoryMention(oldGuild.afkChannelId)} → ${categoryMention(newGuild.afkChannelId)}`);
       }
       if (oldGuild.systemChannelId !== newGuild.systemChannelId) {
-        changes.push(`System channel: ${oldGuild.systemChannelId ? `<#${oldGuild.systemChannelId}>` : "none"} → ${newGuild.systemChannelId ? `<#${newGuild.systemChannelId}>` : "none"}`);
+        changes.push(`System channel: ${categoryMention(oldGuild.systemChannelId)} → ${categoryMention(newGuild.systemChannelId)}`);
       }
       return {
         guild: newGuild,
@@ -285,25 +304,21 @@ function buildEmbed(event: LogEvent): { guild: Guild; embed: EmbedBuilder, file?
           .setDescription(
               `<@${event.mod}> purged ${purgedCount} messages in ${purgedChannel}`,
           );
-      return {guild: purgedChannel.guild, embed, file};
+      return { guild: purgedChannel.guild, embed, file };
     }
   }
 }
 
 export async function log(event: LogEvent) {
-  const built = buildEmbed(event);
+  const built = await buildEmbed(event);
   if (!built) return;
   const { guild, embed, file } = built;
 
   const channelId = getLogChannel(guild.id);
   if (!channelId) return;
 
-  const channel = await guild.channels.fetch(channelId);
+  const channel = await guild.channels.fetch(channelId).catch(() => null);
   if (!channel?.isTextBased()) return;
 
-  if (file === undefined) {
-    await channel.send({ embeds: [embed] });
-  } else {
-    await channel.send({ embeds: [embed], files: [file] });
-  }
+  await channel.send(file ? { embeds: [embed], files: [file] } : { embeds: [embed] });
 }

@@ -15,10 +15,8 @@ for (const folder of commandFolders) {
 
 	for (const file of commandFiles) {
 		const filePath = path.join(commandsPath, file);
-		// Convert path to file:// URL for reliable ESM dynamic imports cross-platform
 		const commandModule = await import(pathToFileURL(filePath).href);
 
-		// Handle both named exports (export const data) and default export (export default)
 		const command = commandModule.default ?? commandModule;
 
 		if (command && 'data' in command && 'execute' in command) {
