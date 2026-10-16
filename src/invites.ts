@@ -27,6 +27,7 @@ function toRow(guildId: string, invite: Invite): InviteRow {
 }
 
 const queues = new Map<string, Promise<unknown>>();
+const seeded = new Set<string>();
 
 function serialize<T>(guildId: string, fn: () => Promise<T>): Promise<T> {
     const previous = queues.get(guildId) ?? Promise.resolve();
@@ -53,6 +54,7 @@ export function seedInvites(guild: Guild): Promise<void> {
         const current = await guild.invites.fetch();
         const stored = getStoredInvites(guild.id);
         syncGuildInvites(guild.id, current.values(), stored.map((r) => r.code));
+        seeded.add(guild.id);
     });
 }
 
@@ -66,19 +68,25 @@ export function mostRecentInvite(guild: Guild): Promise<UsedInvite | null> {
     return serialize(guild.id, async () => {
         const current = await guild.invites.fetch();
         const stored = getStoredInvites(guild.id);
+        const storedCodes = stored.map((r) => r.code);
+
+        if (!seeded.has(guild.id)) {
+            syncGuildInvites(guild.id, current.values(), storedCodes);
+            seeded.add(guild.id);
+            return null;
+        }
+
         const storedByCode = new Map(stored.map((r) => [r.code, r]));
+        const changed = [...current.values()].filter(
+            (invite) => (invite.uses ?? 0) > (storedByCode.get(invite.code)?.uses ?? 0),
+        );
 
         let used: UsedInvite | null = null;
 
-        for (const invite of current.values()) {
-            const before = storedByCode.get(invite.code);
-            if ((invite.uses ?? 0) > (before?.uses ?? 0)) {
-                used = { code: invite.code, inviterId: invite.inviterId ?? null, uses: invite.uses ?? 0 };
-                break;
-            }
-        }
-
-        if (!used) {
+        if (changed.length === 1) {
+            const [invite] = changed;
+            used = { code: invite.code, inviterId: invite.inviterId ?? null, uses: invite.uses ?? 0 };
+        } else if (changed.length === 0) {
             const now = Date.now();
             const candidates = stored.filter(
                 (r) =>
@@ -93,7 +101,7 @@ export function mostRecentInvite(guild: Guild): Promise<UsedInvite | null> {
             }
         }
 
-        syncGuildInvites(guild.id, current.values(), stored.map((r) => r.code));
+        syncGuildInvites(guild.id, current.values(), storedCodes);
 
         return used;
     });
