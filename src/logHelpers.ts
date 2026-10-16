@@ -12,7 +12,7 @@ import {
   type PartialMessage,
   type Role,
 } from "discord.js";
-import { getLogChannel } from "./database.js";
+import {getLogChannel, upsertInvite} from "./database.js";
 import { mostRecentInvite } from "./invites.js";
 
 export type LogEvent =
@@ -231,6 +231,16 @@ async function buildEmbed(event: LogEvent): Promise<BuiltEmbed | null> {
       const { invite } = event;
       const guild = resolveInviteGuild(invite);
       if (!guild) return null;
+      upsertInvite({
+        guild_id: guild.id,
+        code: invite.code,
+        inviter_id: invite.inviterId,
+        channel_id: invite.channelId,
+        uses: invite.uses ?? 0,
+        max_uses: invite.maxUses ?? 0,
+        created_at: Number(invite.createdAt),
+        expires_at: Number(invite.expiresAt)
+      });
       embed.setColor(Colors.Green).setTitle("Invite created")
           .setDescription(`\`${invite.code}\``)
           .addFields(

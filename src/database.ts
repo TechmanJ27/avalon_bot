@@ -161,16 +161,16 @@ export function invitesTable() {
 
   database.exec(`
     CREATE TABLE IF NOT EXISTS invites (
-                                         guild_id TEXT NOT NULL,
-                                         code TEXT NOT NULL,
-                                         inviter_id TEXT,
-                                         channel_id TEXT,
-                                         uses INTEGER NOT NULL DEFAULT 0,
-                                         max_uses INTEGER NOT NULL DEFAULT 0,
-                                         created_at INTEGER,
-                                         expires_at INTEGER,
-                                         PRIMARY KEY (guild_id, code)
-      ) STRICT
+      guild_id TEXT NOT NULL,
+      code TEXT NOT NULL,
+      inviter_id TEXT,
+      channel_id TEXT,
+      uses INTEGER NOT NULL DEFAULT 0,
+      max_uses INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER,
+      expires_at INTEGER,
+      PRIMARY KEY (guild_id, code)
+    ) STRICT
   `);
 }
 
