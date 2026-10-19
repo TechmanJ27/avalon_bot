@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url';
 
 export const database = new DatabaseSync(fileURLToPath(new URL('../../database.db', import.meta.url)));
 
+database.exec('PRAGMA foreign_keys = ON;');
+
 export function transaction<T>(fn: () => T): T {
   database.exec('BEGIN');
   try {
@@ -18,14 +20,14 @@ export function transaction<T>(fn: () => T): T {
 export function warsTable() {
   database.exec(`
     CREATE TABLE IF NOT EXISTS wars (
-                                      id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                      user TEXT NOT NULL,
-                                      attacking TEXT NOT NULL,
-                                      defendingTeam TEXT NOT NULL,
-                                      reason TEXT NOT NULL,
-                                      plan TEXT NOT NULL,
-                                      status TEXT NOT NULL,
-                                      requestedAt TEXT NOT NULL
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user TEXT NOT NULL,
+      attacking TEXT NOT NULL,
+      defendingTeam TEXT NOT NULL,
+      reason TEXT NOT NULL,
+      plan TEXT NOT NULL,
+      status TEXT NOT NULL,
+      requestedAt TEXT NOT NULL
     ) STRICT
   `);
 }
@@ -41,6 +43,7 @@ export function teamsTable() {
       updated_at TEXT NOT NULL
     ) STRICT
   `);
+
   database.exec(`
     CREATE TABLE IF NOT EXISTS members (
       user_id TEXT NOT NULL,
@@ -48,20 +51,20 @@ export function teamsTable() {
       position TEXT NOT NULL,
       PRIMARY KEY (team_id, user_id),
       FOREIGN KEY(team_id) REFERENCES teams(id)
-    ) STRICT
+      ) STRICT
   `);
 }
 
 export function getTeamById(id: number) {
   return database
       .prepare('SELECT * FROM teams WHERE id = ?')
-      .get(id);
+      .get(id) as Record<string, any> | undefined;
 }
 
 export function getTeamMembers(teamId: number) {
   return database
       .prepare('SELECT user_id, position FROM members WHERE team_id = ?')
-      .all(teamId);
+      .all(teamId) as Record<string, any>[];
 }
 
 export function casesTable() {
@@ -105,26 +108,26 @@ export function addCase({ type, userId, modId, guildId, reason, dmSuccess = fals
 export function getCasesForUser(guildId: string, userId: string) {
   return database
       .prepare('SELECT * FROM cases WHERE guild_id = ? AND user_id = ? ORDER BY created_at DESC')
-      .all(guildId, userId);
+      .all(guildId, userId) as Record<string, any>[];
 }
 
 export function getCasesForGuild(guildId: string) {
   return database
       .prepare('SELECT * FROM cases WHERE guild_id = ? ORDER BY created_at DESC')
-      .all(guildId);
+      .all(guildId) as Record<string, any>[];
 }
 
 export function getCaseById(caseId: number) {
   return database
       .prepare('SELECT * FROM cases WHERE id = ?')
-      .get(caseId);
+      .get(caseId) as Record<string, any> | undefined;
 }
 
 export function configTable() {
   database.exec(`
     CREATE TABLE IF NOT EXISTS logChannel (
-                                            id INTEGER PRIMARY KEY,
-                                            channel TEXT NOT NULL
+      id TEXT PRIMARY KEY,
+      channel TEXT NOT NULL
     ) STRICT
   `);
 }
@@ -138,8 +141,11 @@ export function setLogChannel(guildId: string, channelId: string) {
 }
 
 export function getLogChannel(guildId: string): string | null {
-  const row = database.prepare('SELECT channel FROM logChannel WHERE id = ?').get(guildId);
-  return row ? String(row.channel) : null;
+  const row = database
+      .prepare('SELECT channel FROM logChannel WHERE id = ?')
+      .get(guildId) as { channel: string } | undefined; // Safe cast
+
+  return row ? String(row.channel) : null; // Now won't crash if empty
 }
 
 export interface InviteRow {
@@ -154,7 +160,7 @@ export interface InviteRow {
 }
 
 export function invitesTable() {
-  const columns = database.prepare('PRAGMA table_info(invites)').all();
+  const columns = database.prepare('PRAGMA table_info(invites)').all() as { name: string }[];
   if (columns.length && !columns.some((c) => c.name === 'guild_id')) {
     database.exec('DROP TABLE invites');
   }
@@ -200,4 +206,45 @@ export function deleteInvite(guildId: string, code: string) {
   database
       .prepare('DELETE FROM invites WHERE guild_id = ? AND code = ?')
       .run(guildId, code);
+}
+
+export function motwTable() {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS motws (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      winner TEXT,
+      winner_reason TEXT,
+      started TEXT NOT NULL,
+      ended TEXT NOT NULL
+    ) STRICT
+  `);
+
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS nominations (
+      nominator TEXT NOT NULL,
+      motw_id INTEGER NOT NULL,
+      nominee TEXT NOT NULL,
+      reason TEXT,
+      PRIMARY KEY (nominator, motw_id),
+      FOREIGN KEY(motw_id) REFERENCES motws(id)
+      ) STRICT
+  `);
+}
+
+export function getCurrentMotw() {
+  return database
+      .prepare(`SELECT id FROM motws ORDER BY id DESC LIMIT 1`)
+      .get() as { id: number } | undefined;
+}
+
+export function getCurrentNominations(current: number) {
+  return database
+      .prepare('SELECT nominator, nominee, reason FROM nominations WHERE motw_id = ?')
+      .all(current) as Record<string, any>[];
+}
+
+export function getPastWinners(current: number) {
+  return database
+      .prepare("SELECT winner FROM motws WHERE id != ? AND ended > datetime('now')")
+      .all(current) as Record<string, any>[];
 }
