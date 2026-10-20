@@ -1,7 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
 
-export const database = new DatabaseSync(fileURLToPath(new URL('../../database.db', import.meta.url)));
+export const database = new DatabaseSync(fileURLToPath(new URL('../database.db', import.meta.url)));
 
 database.exec('PRAGMA foreign_keys = ON;');
 
