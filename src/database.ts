@@ -215,7 +215,7 @@ export function motwTable() {
       winner TEXT,
       winner_reason TEXT,
       started TEXT NOT NULL,
-      ended TEXT NOT NULL
+      ended TEXT
     ) STRICT
   `);
 
@@ -245,8 +245,8 @@ export function getCurrentNominations(current: number) {
 
 export function getPastWinners(current: number) {
   return database
-      .prepare("SELECT winner FROM motws WHERE id != ? AND ended > datetime('now')")
-      .all(current) as Record<string, any>[];
+      .prepare('SELECT winner FROM motws WHERE id != ? AND ended > ?')
+      .all(current, new Date().toISOString()) as Record<string, any>[];
 }
 
 export function addNomination(nominator: string, nominee: string, reason: string | null = null) {
@@ -259,4 +259,11 @@ export function addNomination(nominator: string, nominee: string, reason: string
   return database
       .prepare('INSERT INTO nominations (nominator, motw_id, nominee, reason) VALUES (?, ?, ?, ?)')
       .run(nominator, currentMotw.id, nominee, reason);
+}
+
+export function newMotw() {
+
+  return database
+      .prepare('INSERT INTO motws (started) VALUES (?)')
+      .run(new Date().toISOString());
 }
