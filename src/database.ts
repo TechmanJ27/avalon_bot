@@ -248,3 +248,15 @@ export function getPastWinners(current: number) {
       .prepare("SELECT winner FROM motws WHERE id != ? AND ended > datetime('now')")
       .all(current) as Record<string, any>[];
 }
+
+export function addNomination(nominator: string, nominee: string, reason: string | null = null) {
+  const currentMotw = getCurrentMotw();
+
+  if (!currentMotw) {
+    throw new Error("No active Member of the Week session found to nominate for.");
+  }
+
+  return database
+      .prepare('INSERT INTO nominations (nominator, motw_id, nominee, reason) VALUES (?, ?, ?, ?)')
+      .run(nominator, currentMotw.id, nominee, reason);
+}
