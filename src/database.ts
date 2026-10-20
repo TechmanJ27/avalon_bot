@@ -5,14 +5,18 @@ export const database = new DatabaseSync(fileURLToPath(new URL('../database.db',
 
 database.exec('PRAGMA foreign_keys = ON;');
 
+
 export function transaction<T>(fn: () => T): T {
-  database.exec('BEGIN');
+  database.exec('BEGIN TRANSACTION');
   try {
     const result = fn();
     database.exec('COMMIT');
     return result;
   } catch (err) {
-    database.exec('ROLLBACK');
+    try {
+      database.exec('ROLLBACK');
+    } catch (rollbackErr) {
+    }
     throw err;
   }
 }
