@@ -15,7 +15,7 @@ export default {
                         .setDescription('The user to nominate')
                         .setRequired(true)
                 )
-                .addUserOption(option =>
+                .addStringOption(option =>
                     option
                         .setName("reason")
                         .setDescription('The reason for the nomination')
