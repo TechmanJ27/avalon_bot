@@ -57,7 +57,9 @@ export default {
 
                 const nominationEmbed = new EmbedBuilder()
                     .setTitle("Member of the Week Nomination")
-                    .setDescription(`Nomination for <$${user.id}> from <@${interaction.user.id}> with reason ${reason}`);
+                    .setDescription(`Nomination for <@${user.id}> from <@${interaction.user.id}>`);
+
+                if (reason !== null) nominationEmbed.addFields({name: 'Reason', value: reason})
 
                 const channel = await interaction.client.channels.fetch('1532850263306535124');
 
