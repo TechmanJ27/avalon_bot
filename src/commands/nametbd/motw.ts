@@ -25,6 +25,11 @@ export default {
             subcommand
                 .setName("about")
                 .setDescription('Info about Avalon\'s Member of the Week')
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("new")
+                .setDescription('Start a new motw')
         ),
 
     async execute(interaction: ChatInputCommandInteraction) {
@@ -61,8 +66,11 @@ export default {
                 addNomination(interaction.user.id, user.id, reason);
 
                 if (channel.isSendable()) {
+
                     await channel.send({embeds: [nominationEmbed]});
+                    await interaction.editReply('Your nomination has been submitted!');
                 } else {
+
                     console.log(nominationEmbed);
                     console.log(channel);
                 }
@@ -73,23 +81,27 @@ export default {
                     .setTitle("All about Avalon\'s Member of the Week")
                     .setDescription('Avalon\'s Member of the Week system is a way to reward activity and contribution to the community.')
                     .addFields(
-                        {name: 'How it works', value: 'Members of the community can nominate a user weekly'},
-                        {name: '', value: ''}
+                        {name: 'How it works', value: 'Members of the community can nominate a user weekly to become next weeks member of the week.'},
+                        {name: 'Associated commands', value: '`/motw`'}
                     );
 
-                if (interaction.channel!.isSendable()) await interaction.channel.send({embeds: [aboutEmbed]});
+                if (interaction.channel!.isSendable()) await interaction.editReply({embeds: [aboutEmbed]});
                 break;
 
             case "new":
 
-                try {
+                if (!interaction.memberPermissions || !interaction.memberPermissions.has('Administrator')) {
+                    return interaction.editReply('You do not have permission to use this command. Administrator required.');
+                }
 
+                try {
                     newMotw();
                     await interaction.editReply('New Member of the Week created successfully.');
                 } catch (error) {
-
-                    console.log(error);
+                    console.error(error);
+                    await interaction.editReply('An error occurred while starting a new Member of the Week.');
                 }
+                break;
         }
     }
 }
