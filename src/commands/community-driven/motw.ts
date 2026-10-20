@@ -1,4 +1,4 @@
-import {ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder} from "discord.js";
+import {ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {addNomination, getCurrentMotw, getCurrentNominations, getPastWinners, newMotw} from "../../database.js";
 
 export default {
@@ -34,7 +34,7 @@ export default {
 
     async execute(interaction: ChatInputCommandInteraction) {
 
-        await interaction.deferReply();
+        await interaction.deferReply({flags: MessageFlags.Ephemeral});
         const subcommand = interaction.options.getSubcommand();
 
         switch (subcommand) {
