@@ -241,10 +241,16 @@ export function getCurrentMotw() {
       .get() as { id: number } | undefined;
 }
 
-export function getCurrentNominations(current: number) {
+export function getNominationByUser(user: string) {
+  const currentMotw = getCurrentMotw();
+
+  if (!currentMotw) {
+    throw new Error("No active Member of the Week session found to nominate for.");
+  }
+
   return database
-      .prepare('SELECT nominator, nominee, reason FROM nominations WHERE motw_id = ?')
-      .all(current) as Record<string, any>[];
+      .prepare('SELECT nominator, reason FROM nominations WHERE nominator = ? AND motw_id = ?')
+      .get(user, currentMotw.id);
 }
 
 export function getPastWinners(current: number) {
@@ -270,4 +276,11 @@ export function newMotw() {
   return database
       .prepare('INSERT INTO motws (started) VALUES (?)')
       .run(new Date().toISOString());
+}
+
+export function deleteNomination(nominator: string, id: number) {
+
+  return database
+      .prepare('DELETE FROM nominations WHERE nominator = ? AND motw_id = ?')
+      .run(nominator, id);
 }

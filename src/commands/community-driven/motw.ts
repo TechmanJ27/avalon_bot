@@ -1,5 +1,12 @@
-import {ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBuilder} from "discord.js";
-import {addNomination, getCurrentMotw, getPastWinners, newMotw} from "../../database.js";
+import {ChatInputCommandInteraction, Colors, EmbedBuilder, MessageFlags, SlashCommandBuilder} from "discord.js";
+import {
+    addNomination,
+    deleteNomination,
+    getCurrentMotw,
+    getNominationByUser,
+    getPastWinners,
+    newMotw
+} from "../../database.js";
 
 export default {
     data: new SlashCommandBuilder()
@@ -30,12 +37,20 @@ export default {
             subcommand
                 .setName("new")
                 .setDescription('Start a new motw')
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("revoke")
+                .setDescription('Revoke your nomination')
         ),
 
     async execute(interaction: ChatInputCommandInteraction) {
 
         await interaction.deferReply({flags: MessageFlags.Ephemeral});
         const subcommand = interaction.options.getSubcommand();
+
+        const channel = await interaction.client.channels.fetch('1532850263306535124');
+        if (!channel) return interaction.editReply('Channel failed to fetch');
 
         switch (subcommand) {
 
@@ -47,26 +62,20 @@ export default {
                 if (user == interaction.user) return interaction.editReply('You cannot nominate yourself');
 
                 if (!getCurrentMotw()) return interaction.editReply("No ongoing Member of the Week cycle was found.");
-                if (getPastWinners(getCurrentMotw()!.id).includes({searchElement: user.id})) return interaction.editReply("Nominee cannot be a winning member from the past six months");
+                if (getPastWinners(getCurrentMotw()!.id).some(n => n.winner === user.id)) return interaction.editReply("Nominee cannot be a winning member from the past six months");
 
                 const nominationEmbed = new EmbedBuilder()
                     .setTitle("Member of the Week Nomination")
-                    .setDescription(`Nomination for <@${user.id}> from <@${interaction.user.id}>`);
+                    .setDescription(`Nomination for <@${user.id}> from <@${interaction.user.id}>`)
+                    .setColor(Colors.Green);
 
                 if (reason !== null) nominationEmbed.addFields({name: 'Reason', value: reason})
-
-                const channel = await interaction.client.channels.fetch('1532850263306535124');
-
-                if (!channel) return interaction.editReply('Channel failed to fetch');
 
                 try {
                     addNomination(interaction.user.id, user.id, reason);
                 } catch (error: any) {
                     if (error.code === 'ERR_SQLITE_ERROR' && error.message.includes('UNIQUE constraint failed')) {
-                        return await interaction.reply({
-                            content: "You have already submitted a nomination for this Member of the Week cycle!",
-                            ephemeral: true
-                        });
+                        return await interaction.editReply("You have already submitted a nomination for this Member of the Week cycle!");
                     }
 
                     console.error(error);
@@ -97,7 +106,6 @@ export default {
                 break;
 
             case "new":
-
                 if (!interaction.memberPermissions || !interaction.memberPermissions.has('Administrator')) {
                     return interaction.editReply('You do not have permission to use this command. Administrator required.');
                 }
@@ -108,6 +116,31 @@ export default {
                 } catch (error) {
                     console.error(error);
                     await interaction.editReply('An error occurred while starting a new Member of the Week.');
+                }
+                break;
+
+            case "revoke":
+                const nomination = getNominationByUser(interaction.user.id);
+
+                if (!nomination || !nomination.nominator || !nomination.id) return interaction.editReply('Could not find a nomination under this user');
+
+                deleteNomination(String(nomination.nominator), Number(nomination.id));
+
+                await interaction.editReply(`Your nomination for <@${nomination.nominee}> was successfully revoked`);
+
+                const revokeEmbed = new EmbedBuilder()
+                    .setTitle("Member of the Week Nomination Revoked")
+                    .setDescription(`Nomination for <@${nomination.nominee}> from <@${nomination.nominator}>`)
+                    .setColor(Colors.Red);
+
+                if (channel.isSendable()) {
+
+                    await channel.send({embeds: [revokeEmbed]});
+                    await interaction.editReply('Your nomination for this cycle has been submitted!');
+                } else {
+
+                    console.log(revokeEmbed);
+                    console.log(channel);
                 }
                 break;
         }
