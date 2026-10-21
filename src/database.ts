@@ -5,7 +5,6 @@ export const database = new DatabaseSync(fileURLToPath(new URL('../database.db',
 
 database.exec('PRAGMA foreign_keys = ON;');
 
-
 export function transaction<T>(fn: () => T): T {
   database.exec('BEGIN TRANSACTION');
   try {
@@ -16,9 +15,62 @@ export function transaction<T>(fn: () => T): T {
     try {
       database.exec('ROLLBACK');
     } catch (rollbackErr) {
+      console.error('Rollback failed:', rollbackErr);
     }
     throw err;
   }
+}
+
+export interface TeamRow {
+  id: number;
+  name: string;
+  nameProper: string;
+  owner: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TeamMemberRow {
+  user_id: string;
+  position: string;
+}
+
+export interface CaseRow {
+  id: number;
+  type: CaseType;
+  user_id: string;
+  mod_id: string;
+  guild_id: string;
+  reason: string;
+  dm_success: number;
+  duration: number | null;
+  created_at: number;
+}
+
+export interface InviteRow {
+  guild_id: string;
+  code: string;
+  inviter_id: string | null;
+  channel_id: string | null;
+  uses: number;
+  max_uses: number;
+  created_at: number | null;
+  expires_at: number | null;
+}
+
+export interface MotwRow {
+  id: number;
+  winner: string | null;
+  winner_reason: string | null;
+  started: string;
+  ended: string | null;
+}
+
+export interface NominationRow {
+  nominator: string;
+  motw_id: number;
+  nominee: string;
+  reason: string | null;
 }
 
 export function warsTable() {
@@ -55,20 +107,20 @@ export function teamsTable() {
       position TEXT NOT NULL,
       PRIMARY KEY (team_id, user_id),
       FOREIGN KEY(team_id) REFERENCES teams(id)
-      ) STRICT
+    ) STRICT
   `);
 }
 
 export function getTeamById(id: number) {
   return database
       .prepare('SELECT * FROM teams WHERE id = ?')
-      .get(id) as Record<string, any> | undefined;
+      .get(id) as TeamRow | undefined;
 }
 
 export function getTeamMembers(teamId: number) {
   return database
       .prepare('SELECT user_id, position FROM members WHERE team_id = ?')
-      .all(teamId) as Record<string, any>[];
+      .all(teamId) as unknown as TeamMemberRow[];
 }
 
 export function casesTable() {
@@ -112,19 +164,19 @@ export function addCase({ type, userId, modId, guildId, reason, dmSuccess = fals
 export function getCasesForUser(guildId: string, userId: string) {
   return database
       .prepare('SELECT * FROM cases WHERE guild_id = ? AND user_id = ? ORDER BY created_at DESC')
-      .all(guildId, userId) as Record<string, any>[];
+      .all(guildId, userId) as unknown as CaseRow[];
 }
 
 export function getCasesForGuild(guildId: string) {
   return database
       .prepare('SELECT * FROM cases WHERE guild_id = ? ORDER BY created_at DESC')
-      .all(guildId) as Record<string, any>[];
+      .all(guildId) as unknown as CaseRow[];
 }
 
 export function getCaseById(caseId: number) {
   return database
       .prepare('SELECT * FROM cases WHERE id = ?')
-      .get(caseId) as Record<string, any> | undefined;
+      .get(caseId) as CaseRow | undefined;
 }
 
 export function configTable() {
@@ -147,25 +199,15 @@ export function setLogChannel(guildId: string, channelId: string) {
 export function getLogChannel(guildId: string): string | null {
   const row = database
       .prepare('SELECT channel FROM logChannel WHERE id = ?')
-      .get(guildId) as { channel: string } | undefined; // Safe cast
+      .get(guildId) as { channel: string } | undefined;
 
-  return row ? String(row.channel) : null; // Now won't crash if empty
-}
-
-export interface InviteRow {
-  guild_id: string;
-  code: string;
-  inviter_id: string | null;
-  channel_id: string | null;
-  uses: number;
-  max_uses: number;
-  created_at: number | null;
-  expires_at: number | null;
+  return row ? String(row.channel) : null;
 }
 
 export function invitesTable() {
   const columns = database.prepare('PRAGMA table_info(invites)').all() as { name: string }[];
   if (columns.length && !columns.some((c) => c.name === 'guild_id')) {
+    console.warn('Dropping legacy invites table that has no guild_id column');
     database.exec('DROP TABLE invites');
   }
 
@@ -180,7 +222,7 @@ export function invitesTable() {
       created_at INTEGER,
       expires_at INTEGER,
       PRIMARY KEY (guild_id, code)
-    ) STRICT
+      ) STRICT
   `);
 }
 
@@ -195,7 +237,7 @@ export function upsertInvite(row: InviteRow) {
       .prepare(`
         INSERT INTO invites (guild_id, code, inviter_id, channel_id, uses, max_uses, created_at, expires_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(guild_id, code) DO UPDATE SET
+          ON CONFLICT(guild_id, code) DO UPDATE SET
           inviter_id = excluded.inviter_id,
           channel_id = excluded.channel_id,
           uses = excluded.uses,
@@ -233,37 +275,40 @@ export function motwTable() {
       FOREIGN KEY(motw_id) REFERENCES motws(id)
       ) STRICT
   `);
+
+  database.exec('CREATE INDEX IF NOT EXISTS idx_nominations_motw ON nominations(motw_id)');
 }
 
 export function getCurrentMotw() {
   return database
-      .prepare(`SELECT id FROM motws ORDER BY id DESC LIMIT 1`)
+      .prepare('SELECT id FROM motws WHERE ended IS NULL ORDER BY id DESC LIMIT 1')
       .get() as { id: number } | undefined;
 }
 
 export function getNominationByUser(user: string) {
   const currentMotw = getCurrentMotw();
 
-  if (!currentMotw) {
-    throw new Error("No active Member of the Week session found to nominate for.");
-  }
+  if (!currentMotw) return undefined;
 
   return database
-      .prepare('SELECT nominator, reason FROM nominations WHERE nominator = ? AND motw_id = ?')
-      .get(user, currentMotw.id);
+      .prepare('SELECT nominator, motw_id, nominee, reason FROM nominations WHERE nominator = ? AND motw_id = ?')
+      .get(user, currentMotw.id) as NominationRow | undefined;
 }
 
-export function getPastWinners(current: number) {
+export function getPastWinners(currentId: number, months = 6) {
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - months);
+
   return database
-      .prepare('SELECT winner FROM motws WHERE id != ? AND ended > ?')
-      .all(current, new Date().toISOString()) as Record<string, any>[];
+      .prepare('SELECT winner FROM motws WHERE id != ? AND winner IS NOT NULL AND ended > ?')
+      .all(currentId, cutoff.toISOString()) as unknown as { winner: string }[];
 }
 
 export function addNomination(nominator: string, nominee: string, reason: string | null = null) {
   const currentMotw = getCurrentMotw();
 
   if (!currentMotw) {
-    throw new Error("No active Member of the Week session found to nominate for.");
+    throw new Error('No active Member of the Week session found to nominate for.');
   }
 
   return database
@@ -272,15 +317,15 @@ export function addNomination(nominator: string, nominee: string, reason: string
 }
 
 export function newMotw() {
-
-  return database
-      .prepare('INSERT INTO motws (started) VALUES (?)')
-      .run(new Date().toISOString());
+  return transaction(() => {
+    const now = new Date().toISOString();
+    database.prepare('UPDATE motws SET ended = ? WHERE ended IS NULL').run(now);
+    return database.prepare('INSERT INTO motws (started) VALUES (?)').run(now);
+  });
 }
 
-export function deleteNomination(nominator: string, id: number) {
-
+export function deleteNomination(nominator: string, motwId: number) {
   return database
       .prepare('DELETE FROM nominations WHERE nominator = ? AND motw_id = ?')
-      .run(nominator, id);
+      .run(nominator, motwId);
 }
