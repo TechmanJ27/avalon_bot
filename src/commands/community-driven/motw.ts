@@ -1,5 +1,5 @@
 import {ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBuilder} from "discord.js";
-import {addNomination, getCurrentMotw, getCurrentNominations, getPastWinners, newMotw} from "../../database.js";
+import {addNomination, getCurrentMotw, getPastWinners, newMotw} from "../../database.js";
 
 export default {
     data: new SlashCommandBuilder()
@@ -46,14 +46,8 @@ export default {
                 if (!user) return interaction.editReply('You must provide a user to nominate');
                 if (user == interaction.user) return interaction.editReply('You cannot nominate yourself');
 
-                if (!getCurrentMotw()) return interaction.editReply("No ongoing Member of the Week vote was found.");
+                if (!getCurrentMotw()) return interaction.editReply("No ongoing Member of the Week cycle was found.");
                 if (getPastWinners(getCurrentMotw()!.id).includes({searchElement: user.id})) return interaction.editReply("Nominee cannot be a winning member from the past six months");
-
-                const nominations = getCurrentNominations(getCurrentMotw()!.id);
-
-                for (const nomination of nominations) {
-                    if (nomination.nominator === user.id) return interaction.editReply("You can only nominate one user");
-                }
 
                 const nominationEmbed = new EmbedBuilder()
                     .setTitle("Member of the Week Nomination")
@@ -65,12 +59,24 @@ export default {
 
                 if (!channel) return interaction.editReply('Channel failed to fetch');
 
-                addNomination(interaction.user.id, user.id, reason);
+                try {
+                    addNomination(interaction.user.id, user.id, reason);
+                } catch (error: any) {
+                    if (error.code === 'ERR_SQLITE_ERROR' && error.message.includes('UNIQUE constraint failed')) {
+                        return await interaction.reply({
+                            content: "You have already submitted a nomination for this Member of the Week cycle!",
+                            ephemeral: true
+                        });
+                    }
+
+                    console.error(error);
+                    await interaction.reply({ content: "An error occurred while processing your nomination.", ephemeral: true });
+                }
 
                 if (channel.isSendable()) {
 
                     await channel.send({embeds: [nominationEmbed]});
-                    await interaction.editReply('Your nomination has been submitted!');
+                    await interaction.editReply('Your nomination for this cycle has been submitted!');
                 } else {
 
                     console.log(nominationEmbed);
