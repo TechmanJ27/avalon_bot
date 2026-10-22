@@ -15,7 +15,7 @@ import {
     newMotw
 } from "../../database.js";
 
-const MOTW_CHANNEL_ID = process.env.MOTW_CHANNEL_ID ?? '1532850263306535124';
+const MOTW_CHANNEL_ID = process.env.MOTW_CHANNEL_ID ?? '1545908845472120832';
 const DUPLICATE_PRIMARY_KEY_CODE = 1555;
 
 async function fetchAnnouncementChannel(interaction: ChatInputCommandInteraction) {
